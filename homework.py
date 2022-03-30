@@ -3,6 +3,7 @@ import requests
 import time
 import logging
 from dotenv import load_dotenv
+from requests import RequestException
 from telegram import Bot
 
 load_dotenv()
@@ -48,6 +49,10 @@ def get_api_answer(current_timestamp):
     """Получаем ответ API."""
     params = {'from_date': current_timestamp}
     homework = requests.get(ENDPOINT, headers=HEADERS, params=params)
+    if homework.status_code != 200:
+        error_message = 'Ошибка! API не вернул корректный статус.'
+        logging.error(error_message)
+        raise RequestException(error_message)
     try:
         response = homework.json()
     except Exception as error:
@@ -63,14 +68,26 @@ def check_response(response):
         logging.error(error_message)
         raise TypeError(error_message)
     homeworks = response.get('homeworks')
+    if len(homeworks) == 0:
+        error_message = 'Cписок домашних работ пуст!'
+        logging.error(error_message)
+        raise ValueError(error_message)
     homework = homeworks[0]
     return homework
 
 
 def parse_status(homework):
     """Получение названия и статуса задания из API."""
-    homework_name = homework['homeworks'][0].get('lesson_name')
-    homework_status = homework['homeworks'][0].get('status')
+    if 'homework_name' not in homework:
+        error_message = 'Ключ homework_name отсутствует'
+        logging.error(error_message)
+        raise KeyError(error_message)
+    if 'status' not in homework:
+        error_message = 'Ключ status отсутствует'
+        logging.error(error_message)
+        raise KeyError(error_message)
+    homework_name = homework.get('homework_name')
+    homework_status = homework.get('status')
     if HOMEWORK_STATUSES[homework_status]:
         verdict = HOMEWORK_STATUSES[homework_status]
     else:
@@ -94,7 +111,6 @@ def main():
     """Основная логика работы бота."""
     homework = requests.get(ENDPOINT, headers=HEADERS, params=PAYLOAD)
     old_status = homework.json()['homeworks'][0].get('status')
-    old_status = '2'
     bot = Bot(token=TELEGRAM_TOKEN)
     bot.send_message(TELEGRAM_CHAT_ID, 'Запуск бота.')
     logging.info('Бот запущен.')
@@ -108,7 +124,7 @@ def main():
                     new_status = homework.get('status')
                     if (new_status != old_status):
                         old_status = new_status
-                        message = parse_status(response)
+                        message = parse_status(homework)
                         send_message(bot, message)
                     time.sleep(RETRY_TIME)
             except Exception as error:
