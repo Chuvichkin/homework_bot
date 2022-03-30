@@ -1,9 +1,9 @@
-from dotenv import load_dotenv
-from telegram import Bot
 import os
 import requests
 import time
 import logging
+from dotenv import load_dotenv
+from telegram import Bot
 
 load_dotenv()
 logging.basicConfig(
@@ -19,6 +19,7 @@ logger.setLevel(logging.DEBUG)
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+
 
 RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
