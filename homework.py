@@ -35,7 +35,7 @@ HOMEWORK_STATUSES = {
 
 
 def send_message(bot, message):
-    """Отправка сообщения в чат телеграм"""
+    """Отправка сообщения в чат телеграм."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logging.info(f'Сообщение отправлено! Текст сообщения: {message}')
