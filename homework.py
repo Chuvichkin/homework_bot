@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from requests import RequestException
 from telegram import Bot
 from http import HTTPStatus
-from exceptions import ListError, DictError
+from exceptions import APIAnswerInvalidException, APIWrongStatusException, MissingTokenException
 
 load_dotenv()
 logging.basicConfig(
@@ -54,7 +54,7 @@ def get_api_answer(current_timestamp):
     if homework.status_code != HTTPStatus.OK:
         error_message = 'Ошибка! API не вернул корректный статус.'
         logging.error(error_message)
-        raise RequestException(error_message)
+        raise APIAnswerInvalidException(error_message)
     try:
         response = homework.json()
     except Exception as error:
@@ -68,12 +68,12 @@ def check_response(response):
     if not isinstance(response, dict):
         error_message = 'Неправильный ответ API'
         logging.error(error_message)
-        raise DictError(error_message)
+        raise TypeError(error_message)
     homeworks = response.get('homeworks')
     if not homeworks:
         error_message = 'Cписок домашних работ пуст!'
         logging.error(error_message)
-        raise ListError(error_message)
+        raise ValueError(error_message)
     homework = homeworks[0]
     return homework
 
@@ -87,7 +87,7 @@ def parse_status(homework):
     if 'status' not in homework:
         error_message = 'Ключ status отсутствует'
         logging.error(error_message)
-        raise KeyError(error_message)
+        raise APIWrongStatusException(error_message)
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     if HOMEWORK_STATUSES[homework_status]:
@@ -100,14 +100,19 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверка токенов Telegram и Практикума."""
-    if not all(TELEGRAM_TOKEN, PRACTICUM_TOKEN):
+    args = (
+        PRACTICUM_TOKEN,
+        TELEGRAM_TOKEN,
+        TELEGRAM_CHAT_ID,
+    )
+    if not all(args):
         logging.critical('Токен отсутствует!')
         return False
     return True
 
 
 def main():
-    """Основная логика работы бота."""
+    """Основная логика работы бота."""    
     homework = requests.get(ENDPOINT, headers=HEADERS, params=PAYLOAD)
     old_status = homework.json()['homeworks'][0].get('status')
     bot = Bot(token=TELEGRAM_TOKEN)
@@ -129,6 +134,8 @@ def main():
                 message = f'Сбой в работе программы: {error}'
             finally:
                 time.sleep(RETRY_TIME)
+    else:
+        raise MissingTokenException("Отсутствуют необходимые токены!")
 
 
 if __name__ == '__main__':

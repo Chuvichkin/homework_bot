@@ -1,10 +1,16 @@
-class DictError(Exception):
+class APIAnswerInvalidException(Exception):
     """Исключение, если получен неправильный ответ API."""
 
     pass
 
 
-class ListError(Exception):
-    """Исключение, если список домашних работ пуст."""
+class APIWrongStatusException(Exception):
+    """Исключение, если API вернул некорректный статус."""
+
+    pass
+
+
+class MissingTokenException(Exception):
+    """Исключение, если отсутствуют обязательные для работы токены."""
 
     pass
