@@ -5,6 +5,8 @@ import logging
 from dotenv import load_dotenv
 from requests import RequestException
 from telegram import Bot
+from http import HTTPStatus
+from exceptions import ListError, DictError
 
 load_dotenv()
 logging.basicConfig(
@@ -49,7 +51,7 @@ def get_api_answer(current_timestamp):
     """Получаем ответ API."""
     params = {'from_date': current_timestamp}
     homework = requests.get(ENDPOINT, headers=HEADERS, params=params)
-    if homework.status_code != 200:
+    if homework.status_code != HTTPStatus.OK:
         error_message = 'Ошибка! API не вернул корректный статус.'
         logging.error(error_message)
         raise RequestException(error_message)
@@ -66,12 +68,12 @@ def check_response(response):
     if not isinstance(response, dict):
         error_message = 'Неправильный ответ API'
         logging.error(error_message)
-        raise TypeError(error_message)
+        raise DictError(error_message)
     homeworks = response.get('homeworks')
-    if len(homeworks) == 0:
+    if not homeworks:
         error_message = 'Cписок домашних работ пуст!'
         logging.error(error_message)
-        raise ValueError(error_message)
+        raise ListError(error_message)
     homework = homeworks[0]
     return homework
 
@@ -91,18 +93,15 @@ def parse_status(homework):
     if HOMEWORK_STATUSES[homework_status]:
         verdict = HOMEWORK_STATUSES[homework_status]
     else:
-        print('Неизвестный статус работы!!!')
+        logging.error('Неизвестный статус работы!!!')
         verdict = 'Неизвестный статус работы!!!'
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
 def check_tokens():
     """Проверка токенов Telegram и Практикума."""
-    if TELEGRAM_TOKEN is None:
-        logging.critical('Токен телеграм отсутствует!')
-        return False
-    if PRACTICUM_TOKEN is None:
-        logging.critical('Токен Практикума отсутствует!')
+    if not all(TELEGRAM_TOKEN, PRACTICUM_TOKEN):
+        logging.critical('Токен отсутствует!')
         return False
     return True
 
@@ -126,9 +125,9 @@ def main():
                         old_status = new_status
                         message = parse_status(homework)
                         send_message(bot, message)
-                    time.sleep(RETRY_TIME)
             except Exception as error:
                 message = f'Сбой в работе программы: {error}'
+            finally:
                 time.sleep(RETRY_TIME)
 
 
