@@ -5,9 +5,7 @@ import logging
 from dotenv import load_dotenv
 from telegram import Bot
 from http import HTTPStatus
-from exceptions import (APIAnswerInvalidException,
-                        APIWrongStatusException,
-                        MissingTokenException)
+from exceptions import (APIAnswerInvalidException, APIWrongStatusException)
 
 load_dotenv()
 logging.basicConfig(
@@ -101,13 +99,7 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверка токенов Telegram и Практикума."""
-    args = (
-        PRACTICUM_TOKEN,
-        TELEGRAM_TOKEN,
-        TELEGRAM_CHAT_ID,
-    )
-    if not all(args):
-        logging.critical('Токен отсутствует!')
+    if not all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]):        
         return False
     return True
 
@@ -136,7 +128,9 @@ def main():
             finally:
                 time.sleep(RETRY_TIME)
     else:
-        raise MissingTokenException("Отсутствуют необходимые токены!")
+        error_message = 'Необходимые токены отсутствуют!'
+        logging.error(error_message)
+
 
 
 if __name__ == '__main__':
