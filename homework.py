@@ -3,10 +3,11 @@ import requests
 import time
 import logging
 from dotenv import load_dotenv
-from requests import RequestException
 from telegram import Bot
 from http import HTTPStatus
-from exceptions import APIAnswerInvalidException, APIWrongStatusException, MissingTokenException
+from exceptions import (APIAnswerInvalidException,
+                        APIWrongStatusException,
+                        MissingTokenException)
 
 load_dotenv()
 logging.basicConfig(
@@ -112,7 +113,7 @@ def check_tokens():
 
 
 def main():
-    """Основная логика работы бота."""    
+    """Основная логика работы бота."""
     homework = requests.get(ENDPOINT, headers=HEADERS, params=PAYLOAD)
     old_status = homework.json()['homeworks'][0].get('status')
     bot = Bot(token=TELEGRAM_TOKEN)
